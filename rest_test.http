@@ -1,3 +1,5 @@
+@URL = http://localhost:3000/books
+
 ### basic_get
 GET {{URL}}
 
@@ -26,3 +28,6 @@ Content-Type: application/json
     "title": "隣のとっとちゃん",
     "body": "黒柳徹子さんのお話"
 }
+
+### delete_test_data
+DELETE {{URL}}/11
