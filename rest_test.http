@@ -1,0 +1,28 @@
+### basic_get
+GET {{URL}}
+
+### basic_get_with_jq
+GET {{URL}}
+
+# @lang=lua
+> {%
+response.body = vim.fn.system({ "jq", "." }, response.body)
+%}
+
+### update_test_data
+PATCH {{URL}}/1
+Content-Type: application/json
+
+{
+    "title": "12人のビリーミリガン",
+    "body": "とても面白い話"
+}
+
+### create_test_data
+POST {{URL}}
+Content-Type: application/json
+
+{
+    "title": "隣のとっとちゃん",
+    "body": "黒柳徹子さんのお話"
+}
