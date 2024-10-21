@@ -5,28 +5,27 @@ import { Book } from "../types/types";
 interface BookEditorProps {
   book: Book;
   open: boolean;
-  onSaveHandler: (id: number, title: string, content: string) => Promise<void>;
+  onSave: (id: number, title: string, content: string) => Promise<void>;
+  onClose: () => void;
 }
 
-const BookEditor: React.FC<BookEditorProps> = ({ book, open, onSaveHandler }) => {
+const BookEditor: React.FC<BookEditorProps> = ({ book, open, onSave, onClose }) => {
   const [title, setTitle] = useState(book.title);
   const [content, setContent] = useState(book.body);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const id = book.id;
-
-  // book が変わった時に title と content を更新
   useEffect(() => {
     setTitle(book.title);
     setContent(book.body);
   }, [book]);
 
-  const handleClick = async () => {
+  const handleSave = async () => {
     setLoading(true);
     setError(null);
     try {
-      await onSaveHandler(id, title, content);
+      await onSave(book.id, title, content);
+      onClose(); // 保存成功後にモーダルを閉じる
     } catch (err) {
       setError("保存に失敗しました。");
     } finally {
@@ -35,7 +34,7 @@ const BookEditor: React.FC<BookEditorProps> = ({ book, open, onSaveHandler }) =>
   };
 
   return (
-    <Modal open={open} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+    <Modal open={open} onClose={onClose} sx={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
       <Box
         sx={{
           display: "flex",
@@ -70,13 +69,19 @@ const BookEditor: React.FC<BookEditorProps> = ({ book, open, onSaveHandler }) =>
         <Button
           variant="contained"
           color="primary"
-          onClick={handleClick}
+          onClick={handleSave}
           disabled={loading} // 保存中はボタンを無効化
         >
           {loading ? "保存中..." : "保存"}
         </Button>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={onClose}>
+          キャンセル
+        </Button>
       </Box>
-    </Modal>
+    </Modal >
   );
 };
 

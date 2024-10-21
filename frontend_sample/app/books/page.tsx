@@ -1,31 +1,21 @@
 "use client";
 
-import {
-  TableContainer,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  Button,
-  Typography,
-  Box,
-  Modal,
-} from "@mui/material";
+import React, { useState, useEffect } from "react";
+import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Button, Typography } from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
-
 import axios from "axios";
-import { useEffect, useState } from "react";
-import BookEditor from "../componets/book_editor";
+import BookEditor from "../componets/BookEditor";
+import BookDetailModal from "../componets/BookDetailModal";
 import { Book } from "../types/types";
 
-const BookIndex = () => {
+const BookIndex: React.FC = () => {
   const [books, setBooks] = useState<Book[]>([]);
-  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
-  const [editedBookId, setEditedBookId] = useState<number | null>(null);
-  const [open, setOpen] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [editedBook, setEditedBook] = useState<Book | null>(null);
+  const [openEditor, setOpenEditor] = useState(false);
+  const [openDetail, setOpenDetail] = useState(false);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -40,28 +30,20 @@ const BookIndex = () => {
     fetchBooks();
   }, []);
 
-  const selectedBook = books.find((book) => book.id === selectedBookId);
-  const editedBook = books.find((book) => book.id === editedBookId);
-
-  const handleShowDetails = (id?: number) => {
-    setSelectedBookId(id || null);
-    if (!id) setOpen(false); // モーダルを閉じたときにリセット
+  const handleEditBook = (book: Book) => {
+    setEditedBook(book);
+    setOpenEditor(true);
   };
 
-  const handleEditBook = (id?: number) => {
-    setEditedBookId(id || null);
-    if (!id) setOpen(false); // モーダルを閉じたときにリセット
+  const handleShowDetails = (book: Book) => {
+    setSelectedBook(book);
+    setOpenDetail(true);
   };
 
-  const handleSaveAndClose = async (id: number, title: string, content: string) => {
-    await saveBook(id, title, content);
-    setOpen(false);
-  };
-
-  const saveBook = async (id: number, title: string, body: string) => {
+  const handleSave = async (id: number, title: string, content: string) => {
     try {
-      await axios.patch(`http://localhost:3000/books/${id}`, { title, body });
-      setBooks(books.map((book) => (book.id === id ? { ...book, title, body } : book)));
+      await axios.patch(`http://localhost:3000/books/${id}`, { title, body: content });
+      setBooks(books.map((book) => (book.id === id ? { ...book, title, body: content } : book)));
     } catch (error) {
       // eslint-disable-next-line no-console
       console.error("Error saving book:", error);
@@ -84,12 +66,12 @@ const BookIndex = () => {
         Book List
       </Typography>
       <TableContainer>
-        <Table sx={{ maxWidth: 650 }} align="center">
+        <Table sx={{ maxWidth: 700 }} align="center">
           <TableHead>
             <TableRow>
               <TableCell>Title</TableCell>
               <TableCell>Body</TableCell>
-              <TableCell colSpan={3}></TableCell>
+              <TableCell align="center" colSpan={3}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -103,12 +85,8 @@ const BookIndex = () => {
                     color="primary"
                     size="small"
                     startIcon={<VisibilityIcon />}
-                    onClick={() => {
-                      handleShowDetails(book.id);
-                      setOpen(true);
-                    }}
-                  >
-                    SHOW
+                    onClick={() => handleShowDetails(book)}>
+                    Show
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -117,12 +95,8 @@ const BookIndex = () => {
                     color="primary"
                     size="small"
                     startIcon={<ModeEditIcon />}
-                    onClick={() => {
-                      handleEditBook(book.id);
-                      setOpen(true);
-                    }}
-                  >
-                    EDIT
+                    onClick={() => handleEditBook(book)}>
+                    Edit
                   </Button>
                 </TableCell>
                 <TableCell>
@@ -131,9 +105,8 @@ const BookIndex = () => {
                     color="error"
                     size="small"
                     startIcon={<DeleteForeverIcon />}
-                    onClick={() => deleteBook(book.id)}
-                  >
-                    DESTROY
+                    onClick={() => deleteBook(book.id)}>
+                    Delete
                   </Button>
                 </TableCell>
               </TableRow>
@@ -143,33 +116,20 @@ const BookIndex = () => {
       </TableContainer>
 
       {editedBook && (
-        <BookEditor book={editedBook} open={open} onSaveHandler={handleSaveAndClose} />
+        <BookEditor
+          book={editedBook}
+          open={openEditor}
+          onSave={handleSave}
+          onClose={() => setOpenEditor(false)}
+        />
       )}
 
       {selectedBook && (
-        <Modal open>
-          <Box
-            sx={{
-              position: "absolute" as const,
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: 400,
-              bgcolor: "lightblue",
-              p: 4,
-              borderRadius: "0.5em",
-            }}
-          >
-            <Box component="p">ID: {selectedBook.id}</Box>
-            <Box component="p">Title: {selectedBook.title}</Box>
-            <Box component="p">Body: {selectedBook.body}</Box>
-            <Box component="p">CreatedAt: {selectedBook.created_at}</Box>
-            <Box component="p">UpdatedAt: {selectedBook.updated_at}</Box>
-            <Button onClick={() => handleShowDetails()} variant="contained">
-              Close ✖️
-            </Button>
-          </Box>
-        </Modal>
+        <BookDetailModal
+          book={selectedBook}
+          open={openDetail}
+          onClose={() => setOpenDetail(false)}
+        />
       )}
     </>
   );
