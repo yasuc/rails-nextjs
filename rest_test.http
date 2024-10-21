@@ -4,7 +4,15 @@
 GET {{URL}}
 
 ### basic_get_with_jq
-GET {{URL}}
+GET {{URL}}/
+
+# @lang=lua
+> {%
+response.body = vim.fn.system({ "jq", "." }, response.body)
+%}
+
+### basic_get_one_with_jq
+GET {{URL}}/{{$randomInt10}}
 
 # @lang=lua
 > {%
@@ -12,7 +20,7 @@ response.body = vim.fn.system({ "jq", "." }, response.body)
 %}
 
 ### update_test_data
-PATCH {{URL}}/1
+PATCH {{URL}}/{{$randomInt10}}
 Content-Type: application/json
 
 {
@@ -30,4 +38,4 @@ Content-Type: application/json
 }
 
 ### delete_test_data
-DELETE {{URL}}/11
+DELETE {{URL}}/{{$randomInt10}}

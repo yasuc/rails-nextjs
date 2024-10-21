@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody, Button, Typography } from "@mui/material";
+import {
+  TableContainer,
+  Table,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableBody,
+  Button,
+  Typography,
+  Box,
+} from "@mui/material";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import ModeEditIcon from "@mui/icons-material/ModeEdit";
@@ -16,6 +26,7 @@ const BookIndex: React.FC = () => {
   const [editedBook, setEditedBook] = useState<Book | null>(null);
   const [openEditor, setOpenEditor] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
+  const [isNewBook, setIsNewBook] = useState(false); // 新しい本かどうかを判定するフラグ
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -30,24 +41,48 @@ const BookIndex: React.FC = () => {
     fetchBooks();
   }, []);
 
+  // 新しい本を追加するボタンのクリック処理
+  const handleAddNewBook = () => {
+    setEditedBook({ id: 0, title: "", body: "", created_at: "", updated_at: "" }); // 空のBookオブジェクトを設定
+    setIsNewBook(true); // 新しい本の作成であることを示す
+    setOpenEditor(true); // BookEditorを開く
+  };
+
+  // 既存の本を編集する
   const handleEditBook = (book: Book) => {
     setEditedBook(book);
+    setIsNewBook(false); // 既存の本の編集
     setOpenEditor(true);
   };
 
+  // 本の詳細を表示する
   const handleShowDetails = (book: Book) => {
     setSelectedBook(book);
     setOpenDetail(true);
   };
 
-  const handleSave = async (id: number, title: string, content: string) => {
-    try {
-      await axios.patch(`http://localhost:3000/books/${id}`, { title, body: content });
-      setBooks(books.map((book) => (book.id === id ? { ...book, title, body: content } : book)));
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error saving book:", error);
+  // 本を保存する
+  const handleSave = async (id: number, title: string, body: string) => {
+    if (isNewBook) {
+      // 新しい本を作成するためのPOSTリクエスト
+      try {
+        const response = await axios.post("http://localhost:3000/books", { title, body });
+        setBooks([...books, response.data]); // 新しい本をリストに追加
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Error adding new book:", error);
+      }
+    } else {
+      // 既存の本を更新するためのPATCHリクエスト
+      try {
+        await axios.patch(`http://localhost:3000/books/${id}`, { title, body });
+        setBooks(books.map((book) => (book.id === id ? { ...book, title, body } : book)));
+      } catch (error) {
+        // eslint-disable-next-line no-console
+        console.error("Error saving book:", error);
+      }
     }
+    setOpenEditor(false); // BookEditorを閉じる
   };
 
   const deleteBook = async (id: number) => {
@@ -65,13 +100,23 @@ const BookIndex: React.FC = () => {
       <Typography variant="h4" align="center">
         Book List
       </Typography>
+
+      {/* Add New Button */}
+      <Box display="flex" justifyContent="center" mt={2}>
+        <Button variant="contained" color="primary" onClick={handleAddNewBook}>
+          Add New Button
+        </Button>
+      </Box>
+
       <TableContainer>
         <Table sx={{ maxWidth: 700 }} align="center">
           <TableHead>
             <TableRow>
               <TableCell>Title</TableCell>
               <TableCell>Body</TableCell>
-              <TableCell align="center" colSpan={3}>Actions</TableCell>
+              <TableCell align="center" colSpan={3}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -85,7 +130,8 @@ const BookIndex: React.FC = () => {
                     color="primary"
                     size="small"
                     startIcon={<VisibilityIcon />}
-                    onClick={() => handleShowDetails(book)}>
+                    onClick={() => handleShowDetails(book)}
+                  >
                     Show
                   </Button>
                 </TableCell>
@@ -95,7 +141,8 @@ const BookIndex: React.FC = () => {
                     color="primary"
                     size="small"
                     startIcon={<ModeEditIcon />}
-                    onClick={() => handleEditBook(book)}>
+                    onClick={() => handleEditBook(book)}
+                  >
                     Edit
                   </Button>
                 </TableCell>
@@ -105,7 +152,8 @@ const BookIndex: React.FC = () => {
                     color="error"
                     size="small"
                     startIcon={<DeleteForeverIcon />}
-                    onClick={() => deleteBook(book.id)}>
+                    onClick={() => deleteBook(book.id)}
+                  >
                     Delete
                   </Button>
                 </TableCell>
